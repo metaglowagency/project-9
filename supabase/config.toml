@@ -1,0 +1,11 @@
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.google-merchant-feed]
+verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
