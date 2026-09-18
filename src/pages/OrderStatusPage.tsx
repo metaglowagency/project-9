@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { Search, Package, Truck, Check, Clock, X, ChevronRight, CreditCard } from 'lucide-react';
 import { formatPrice } from '../utils';
 import { useSEO, BASE_URL } from '../hooks/useSEO';
@@ -19,11 +19,6 @@ interface OrderRow {
   payment_status: string;
   created_at: string;
 }
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 const statusInfo: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   pending: { label: 'Pending', icon: Clock, color: 'text-amber-600' },

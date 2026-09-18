@@ -72,7 +72,6 @@ export const handler: Handler = async (event: HandlerEvent) => {
       }
     }
 
-    const orderNumber = 'MA-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
 
     if (!stripeSecretKey) {
@@ -80,7 +79,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
         statusCode: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          error: 'Stripe Secret Key is not configured on the server.',
+          error: 'STRIPE_SECRET_KEY is not configured in Environment Variables.',
         }),
       };
     }

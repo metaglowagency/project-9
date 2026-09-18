@@ -36,11 +36,12 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    const orderNumber = 'MA-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY;
 
     if (!stripeSecretKey) {
-      return res.status(500).json({ error: 'STRIPE_SECRET_KEY is not configured on the server.' });
+      return res.status(500).json({
+        error: 'STRIPE_SECRET_KEY is not set. Please add it to your Vercel Project Settings > Environment Variables.',
+      });
     }
 
     const amountInPence = Math.round(total * 100);

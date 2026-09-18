@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase, SUPABASE_URL } from '../services/supabase';
 import { formatPrice } from '../utils';
 import { useProducts } from '../hooks/useProducts';
 import { ProductAdmin } from './ProductAdmin';
@@ -32,10 +32,6 @@ interface OrderRow {
 
 const SESSION_KEY = 'markatkins-admin-key';
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 export function AdminPage({ navigate }: AdminPageProps) {
   const [authed, setAuthed] = useState(false);
@@ -64,7 +60,7 @@ export function AdminPage({ navigate }: AdminPageProps) {
     setFeedError('');
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-merchant-feed`
+        `${SUPABASE_URL}/functions/v1/google-merchant-feed`
       );
       if (!response.ok) throw new Error(`Feed request failed (${response.status})`);
       const xml = await response.text();
@@ -604,7 +600,7 @@ export function AdminPage({ navigate }: AdminPageProps) {
                     <Download className="w-4 h-4" />
                   </button>
                   <a
-                    href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-merchant-feed`}
+                    href={`${SUPABASE_URL}/functions/v1/google-merchant-feed`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-stone-700 rounded-full font-semibold text-sm hover:border-stone-400 transition-colors"
@@ -628,7 +624,7 @@ export function AdminPage({ navigate }: AdminPageProps) {
                   A dynamically generated sitemap including all product pages. Submit this to Google Search Console.
                 </p>
                 <a
-                  href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sitemap`}
+                  href={`${SUPABASE_URL}/functions/v1/sitemap`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 border border-stone-300 text-stone-700 rounded-full font-semibold text-sm hover:border-stone-400 transition-colors"

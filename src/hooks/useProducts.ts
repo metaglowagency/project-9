@@ -1,11 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, createElement, type ReactNode } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
+import { products as defaultProducts } from '../data/products';
 import type { Product, VariantOption } from '../types';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 interface ProductRow {
   id: string;
@@ -70,24 +66,30 @@ interface ProductsContextValue {
 const ProductsContext = createContext<ProductsContextValue | null>(null);
 
 export function ProductsProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(defaultProducts);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (error) {
-      setError(error.message);
-      setProducts([]);
-    } else if (data) {
-      setProducts((data as ProductRow[]).map(mapRow));
-      setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: true });
+      if (error) {
+        // Fall back gracefully to built-in products catalog
+        setProducts(defaultProducts);
+      } else if (data && data.length > 0) {
+        setProducts((data as ProductRow[]).map(mapRow));
+        setError(null);
+      } else {
+        setProducts(defaultProducts);
+      }
+    } catch (err) {
+      setProducts(defaultProducts);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {

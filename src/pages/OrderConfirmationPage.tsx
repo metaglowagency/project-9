@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../services/supabase';
 import { Check, Clock, Package, Truck, ChevronRight, AlertCircle } from 'lucide-react';
 import { formatPrice } from '../utils';
 import { useSEO, BASE_URL } from '../hooks/useSEO';
@@ -20,11 +20,6 @@ interface OrderRow {
   payment_status: string;
   created_at: string;
 }
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 export function OrderConfirmationPage({ navigate, params }: OrderConfirmationPageProps) {
   const orderNumber = params.order || '';

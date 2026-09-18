@@ -12,7 +12,7 @@ export function getStripe(overrideKey?: string | null): Promise<Stripe | null> {
   const key =
     overrideKey ||
     (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined)?.trim() ||
-    null;
+    'pk_live_51UBiwaLPgHXyEaQiK3F7amfvgxhqGKdpOlgmHTYTQUo92srJ9KbQYQwh54MRORxyr5KqhXPTAt2ZXzJUU8mNdbAS00vxuhcxuf';
 
   if (!key) {
     return Promise.resolve(null);
