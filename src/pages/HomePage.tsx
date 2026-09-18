@@ -295,7 +295,7 @@ export function HomePage({ navigate }: HomePageProps) {
 
       {/* 2. Full Hero Section with Auto-Scrolling Images (Shopify Lifestyle Carousel) */}
       <section
-        className="relative bg-stone-900 overflow-hidden min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center"
+        className="relative bg-stone-900 overflow-hidden h-[640px] sm:h-[680px] lg:h-[720px] w-full flex items-center"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -305,25 +305,25 @@ export function HomePage({ navigate }: HomePageProps) {
           return (
             <div
               key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              {/* Background Image with subtle Ken Burns effect */}
+              {/* Background Image with subtle Ken Burns effect - must be absolute inset-0 so text content stays in view! */}
               <img
                 src={slide.image}
                 alt={slide.title}
-                className={`w-full h-full object-cover object-center transition-transform duration-[6000ms] ease-out ${
+                className={`absolute inset-0 w-full h-full object-cover object-center z-0 transition-transform duration-[6000ms] ease-out ${
                   isActive ? 'scale-105' : 'scale-100'
                 }`}
                 loading={index === 0 ? 'eager' : 'lazy'}
               />
-              {/* Refined Gradient Overlay for editorial readability */}
-              <div className="absolute inset-0 bg-gradient-to-r from-stone-950/85 via-stone-950/50 to-transparent sm:from-stone-950/90 sm:via-stone-950/60 lg:to-stone-950/20" />
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 via-transparent to-stone-950/20" />
+              {/* Refined Gradient Overlays for high-contrast readability */}
+              <div className="absolute inset-0 bg-gradient-to-r from-stone-950/95 via-stone-950/65 to-stone-950/25 z-10 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-transparent to-stone-950/30 z-10 pointer-events-none" />
 
               {/* Slide Content */}
-              <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center py-20 lg:py-24">
+              <div className="relative z-20 w-full h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-center py-12 sm:py-16">
                 <div className="max-w-2xl space-y-6">
                   {/* Dynamic Rotating Slogan Pill */}
                   <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-xs font-semibold text-white shadow-xl max-w-full">
@@ -439,21 +439,21 @@ export function HomePage({ navigate }: HomePageProps) {
         {/* Carousel Navigation Arrows */}
         <button
           onClick={goToPrevSlide}
-          className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition-all shadow-lg hover:scale-105"
+          className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition-all shadow-lg hover:scale-105"
           aria-label="Previous slide"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <button
           onClick={goToNextSlide}
-          className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition-all shadow-lg hover:scale-105"
+          className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-md border border-white/30 flex items-center justify-center transition-all shadow-lg hover:scale-105"
           aria-label="Next slide"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
 
         {/* Slide Indicators & Progress Bar */}
-        <div className="absolute bottom-6 inset-x-0 z-20 flex flex-col items-center gap-3">
+        <div className="absolute bottom-6 inset-x-0 z-30 flex flex-col items-center gap-3">
           <div className="flex items-center gap-2.5">
             {heroSlides.map((slide, idx) => (
               <button
