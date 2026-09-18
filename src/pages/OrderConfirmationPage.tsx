@@ -45,6 +45,16 @@ export function OrderConfirmationPage({ navigate, params }: OrderConfirmationPag
     }
 
     const fetchOrder = async () => {
+      // First check local session storage for freshly completed checkout
+      try {
+        const localData = sessionStorage.getItem(`order_${orderNumber.trim()}`);
+        if (localData) {
+          setOrder(JSON.parse(localData));
+          setLoading(false);
+          return;
+        }
+      } catch {}
+
       const { data, error } = await supabase
         .rpc('get_order_confirmation', { p_order_number: orderNumber.trim() })
         .maybeSingle();

@@ -206,22 +206,19 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
 
       const origin = window.location.origin;
 
-      // 1. Send checkout request to Supabase edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            items: orderItems,
-            ...form,
-            origin,
-          }),
-        }
-      );
+      // 1. Send checkout request directly to /api/stripe-checkout (Netlify / local dev)
+      const response = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: orderItems,
+          ...form,
+          total,
+          origin,
+        }),
+      });
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
@@ -265,28 +262,50 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
 
         if (result.error) {
           console.error('Payment confirmation error:', result.error);
+          const isMismatch = result.error.message?.includes('No such payment_intent');
           setErrors((prev) => ({
             ...prev,
-            card: result.error.message || 'Your card could not be processed. Please try again.',
+            card: isMismatch
+              ? 'Stripe Account Mismatch: Your server created the payment under account UBiwa, but the card field is using key UBjL. Please provide the publishable key starting with pk_live_51UBiwa.'
+              : result.error.message || 'Your card could not be processed. Please try again.',
           }));
           setSubmitting(false);
           return;
         }
 
-        if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+        if (result.paymentIntent && (result.paymentIntent.status === 'succeeded' || result.paymentIntent.status === 'processing')) {
           // Success! Zero redirects off-site.
+          try {
+            sessionStorage.setItem(`order_${orderNumber}`, JSON.stringify({
+              order_number: orderNumber,
+              customer_email_masked: form.customer_email.replace(/(.{2})(.*)(?=@)/, '$1***'),
+              items: items.map((i) => ({
+                product_handle: i.productHandle,
+                title: i.title,
+                price: i.price,
+                quantity: i.quantity,
+                options: i.selectedOptions,
+              })),
+              subtotal,
+              delivery: 0,
+              total,
+              status: 'confirmed',
+              payment_status: 'paid',
+              created_at: new Date().toISOString(),
+            }));
+          } catch { }
+
           clearCart();
           navigate(`/order-confirmation?order=${encodeURIComponent(orderNumber)}`);
           return;
         }
       }
 
-      // Fallback: If Stripe card element was not mounted (e.g. key missing in dev),
-      // redirect to session url if present, or complete order
-      if (data.url) {
-        clearCart();
-        window.location.href = data.url;
-        return;
+      // Never redirect off-site: keep payment 100% on the checkout page
+      if (!clientSecret) {
+        throw new Error(
+          'In-page payment session could not be created. Please check your network and try again.'
+        );
       }
 
       // If simulated order in test environment
@@ -456,11 +475,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                       value={form.customer_email}
                       onChange={(e) => updateField('customer_email', e.target.value)}
                       placeholder="e.g. sarah.smith@example.com"
-                      className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${
-                        errors.customer_email
+                      className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${errors.customer_email
                           ? 'border-red-400 bg-red-50/20'
                           : 'border-stone-300 focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F]'
-                      }`}
+                        }`}
                     />
                     {errors.customer_email && (
                       <p className="text-xs text-red-600 mt-1">{errors.customer_email}</p>
@@ -505,11 +523,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                       value={form.customer_name}
                       onChange={(e) => updateField('customer_name', e.target.value)}
                       placeholder="e.g. Sarah Smith"
-                      className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${
-                        errors.customer_name
+                      className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${errors.customer_name
                           ? 'border-red-400 bg-red-50/20'
                           : 'border-stone-300 focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F]'
-                      }`}
+                        }`}
                     />
                     {errors.customer_name && (
                       <p className="text-xs text-red-600 mt-1">{errors.customer_name}</p>
@@ -523,11 +540,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                       value={form.shipping_address_1}
                       onChange={(e) => updateField('shipping_address_1', e.target.value)}
                       placeholder="House name / number and street name"
-                      className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${
-                        errors.shipping_address_1
+                      className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${errors.shipping_address_1
                           ? 'border-red-400 bg-red-50/20'
                           : 'border-stone-300 focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F]'
-                      }`}
+                        }`}
                     />
                     {errors.shipping_address_1 && (
                       <p className="text-xs text-red-600 mt-1">{errors.shipping_address_1}</p>
@@ -553,11 +569,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                         value={form.shipping_city}
                         onChange={(e) => updateField('shipping_city', e.target.value)}
                         placeholder="e.g. London"
-                        className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${
-                          errors.shipping_city
+                        className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${errors.shipping_city
                             ? 'border-red-400 bg-red-50/20'
                             : 'border-stone-300 focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F]'
-                        }`}
+                          }`}
                       />
                       {errors.shipping_city && (
                         <p className="text-xs text-red-600 mt-1">{errors.shipping_city}</p>
@@ -570,11 +585,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                         value={form.shipping_county}
                         onChange={(e) => updateField('shipping_county', e.target.value)}
                         placeholder="e.g. Greater London"
-                        className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${
-                          errors.shipping_county
+                        className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${errors.shipping_county
                             ? 'border-red-400 bg-red-50/20'
                             : 'border-stone-300 focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F]'
-                        }`}
+                          }`}
                       />
                       {errors.shipping_county && (
                         <p className="text-xs text-red-600 mt-1">{errors.shipping_county}</p>
@@ -587,11 +601,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                         value={form.shipping_postcode}
                         onChange={(e) => updateField('shipping_postcode', e.target.value.toUpperCase())}
                         placeholder="e.g. SW1A 1AA"
-                        className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${
-                          errors.shipping_postcode
+                        className={`w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors ${errors.shipping_postcode
                             ? 'border-red-400 bg-red-50/20'
                             : 'border-stone-300 focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F]'
-                        }`}
+                          }`}
                       />
                       {errors.shipping_postcode && (
                         <p className="text-xs text-red-600 mt-1">{errors.shipping_postcode}</p>
@@ -685,11 +698,10 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                       </label>
                       <div
                         ref={cardContainerRef}
-                        className={`min-h-[48px] px-4 py-3 rounded-lg border bg-stone-50/40 transition-all ${
-                          errors.card
+                        className={`min-h-[48px] px-4 py-3 rounded-lg border bg-stone-50/40 transition-all ${errors.card
                             ? 'border-red-400 ring-1 ring-red-400'
                             : 'border-stone-300 focus-within:border-[#1E3A2F] focus-within:ring-1 focus-within:ring-[#1E3A2F] focus-within:bg-white'
-                        }`}
+                          }`}
                       />
                       {errors.card && (
                         <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1">
@@ -715,9 +727,8 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                   <h3 className="text-sm font-semibold text-stone-900 mb-3">Billing Address</h3>
                   <div className="space-y-2">
                     <label
-                      className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
-                        sameBillingAddress ? 'border-[#1E3A2F] bg-green-50/20' : 'border-stone-200 hover:bg-stone-50'
-                      }`}
+                      className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${sameBillingAddress ? 'border-[#1E3A2F] bg-green-50/20' : 'border-stone-200 hover:bg-stone-50'
+                        }`}
                     >
                       <input
                         type="radio"
@@ -730,9 +741,8 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
                     </label>
 
                     <label
-                      className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
-                        !sameBillingAddress ? 'border-[#1E3A2F] bg-green-50/20' : 'border-stone-200 hover:bg-stone-50'
-                      }`}
+                      className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${!sameBillingAddress ? 'border-[#1E3A2F] bg-green-50/20' : 'border-stone-200 hover:bg-stone-50'
+                        }`}
                     >
                       <input
                         type="radio"
