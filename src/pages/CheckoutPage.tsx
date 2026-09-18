@@ -112,7 +112,7 @@ export function CheckoutPage({ navigate, params }: CheckoutPageProps) {
 
           createdCard.on('change', (event) => {
             if (event.error) {
-              setErrors((prev) => ({ ...prev, card: event.error.message }));
+              setErrors((prev) => ({ ...prev, card: event.error?.message || 'Invalid card details.' }));
             } else {
               setErrors((prev) => ({ ...prev, card: '' }));
             }
